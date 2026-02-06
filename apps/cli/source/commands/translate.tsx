@@ -6,11 +6,11 @@ import {Box, Text} from 'ink';
 import {translateMessages, type Provider} from '@grim/translator';
 import {z} from 'zod/v4';
 import {ApiKeyInput} from '../components/api-key-input.js';
+import {ContextInput} from '../components/context-input.js';
 import {LanguageSelector} from '../components/language-selector.js';
 import {LlmSelector} from '../components/llm-selector.js';
 import {ModelSelector} from '../components/model-selector.js';
 import {OutputPathInput} from '../components/output-path-input.js';
-import {ReadmeInput} from '../components/readme-input.js';
 import {TranslationProgress} from '../components/translation-progress.js';
 
 export const args = z.tuple([
@@ -19,6 +19,8 @@ export const args = z.tuple([
 
 export const options = z.object({
 	output: z.string().optional().describe('Output file path (defaults to {language}.json in the source directory)'),
+	context: z.string().optional().describe('Direct context string to help improve translation quality'),
+	contextPath: z.string().optional().describe('Path to a file containing context (e.g., README.md)'),
 });
 
 type Props = {
@@ -31,7 +33,7 @@ type Step =
 	| 'model'
 	| 'apiKey'
 	| 'language'
-	| 'readme'
+	| 'context'
 	| 'outputPath'
 	| 'translating'
 	| 'done';
@@ -60,7 +62,7 @@ export default function Translate({args: commandArgs, options: commandOptions}: 
 	const [error, setError] = useState<string>('');
 	const [progress, setProgress] = useState({current: 0, total: 0});
 	const [outputPath, setOutputPath] = useState<string>('');
-	const [readmeContent, setReadmeContent] = useState<string>('');
+	const [contextContent, setContextContent] = useState<string>('');
 
 	// Validate file exists
 	const absolutePath = path.resolve(filePath);
@@ -97,19 +99,42 @@ export default function Translate({args: commandArgs, options: commandOptions}: 
 
 	const handleLanguageSelect = (lang: string) => {
 		setTargetLanguage(lang);
-		setStep('readme');
+
+		// If context is provided via CLI, skip the context step
+		if (commandOptions.context || commandOptions.contextPath) {
+			let context = commandOptions.context ?? '';
+			if (commandOptions.contextPath && fs.existsSync(commandOptions.contextPath)) {
+				context = fs.readFileSync(commandOptions.contextPath, 'utf8');
+			}
+
+			setContextContent(context);
+
+			// Also check if output is provided to potentially skip that step too
+			if (commandOptions.output) {
+				setOutputPath(path.resolve(commandOptions.output));
+				startTranslation(path.resolve(commandOptions.output), context);
+			} else {
+				setStep('outputPath');
+			}
+		} else {
+			setStep('context');
+		}
 	};
 
-	const handleReadmeSubmit = (readme: string) => {
-		// Store readme content for later use
-		if (readme && fs.existsSync(readme)) {
-			setReadmeContent(fs.readFileSync(readme, 'utf8'));
+	const handleContextSubmit = (contextInput: string) => {
+		// contextInput could be a file path or direct text
+		let context = contextInput;
+		if (contextInput && fs.existsSync(contextInput)) {
+			// It's a file path, read the content
+			context = fs.readFileSync(contextInput, 'utf8');
 		}
+
+		setContextContent(context);
 
 		// If --output was provided, skip to translating; otherwise ask for output path
 		if (commandOptions.output) {
 			setOutputPath(path.resolve(commandOptions.output));
-			startTranslation(path.resolve(commandOptions.output));
+			startTranslation(path.resolve(commandOptions.output), context);
 		} else {
 			setStep('outputPath');
 		}
@@ -126,13 +151,13 @@ export default function Translate({args: commandArgs, options: commandOptions}: 
 	const handleOutputPathSubmit = (outPath: string) => {
 		const resolvedPath = path.resolve(outPath);
 		setOutputPath(resolvedPath);
-		startTranslation(resolvedPath);
+		startTranslation(resolvedPath, contextContent);
 	};
 
 	/**
-	 * Starts the translation process with the given output path.
+	 * Starts the translation process with the given output path and context.
 	 */
-	const startTranslation = (outPath: string) => {
+	const startTranslation = (outPath: string, context: string) => {
 		setStep('translating');
 
 		void (async () => {
@@ -145,7 +170,7 @@ export default function Translate({args: commandArgs, options: commandOptions}: 
 				const translated = await translateMessages({
 					messages,
 					targetLanguage,
-					context: readmeContent,
+					context,
 					apiKey,
 					provider: provider!,
 					model,
@@ -191,7 +216,7 @@ export default function Translate({args: commandArgs, options: commandOptions}: 
 				<LanguageSelector onSelect={handleLanguageSelect} />
 			)}
 
-			{step === 'readme' && <ReadmeInput onSubmit={handleReadmeSubmit} />}
+			{step === 'context' && <ContextInput onSubmit={handleContextSubmit} />}
 
 			{step === 'outputPath' && (
 				<OutputPathInput
