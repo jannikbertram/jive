@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import test from 'ava';
-import {translateMessages} from '../src/translator.js';
+import {translateMessages, RateLimitError} from '../src/translator.js';
 
 const fixturesPath = path.join(process.cwd(), 'test', 'fixtures');
 const enJson = JSON.parse(fs.readFileSync(path.join(fixturesPath, 'en.json'), 'utf8')) as Record<string, string>;
@@ -437,8 +437,9 @@ test('translateMessages retries on 429 rate limit error', async t => {
 	const messages = {hello: 'Hello'};
 	const translated = {hello: 'Hallo'};
 
+	// Fail the first attempt, succeed on the second (within the 3 attempts limit)
 	const mockClient = createRetryMockClient(
-		2,
+		1,
 		JSON.stringify(translated),
 		'Error 429: Too many requests',
 	);
@@ -454,8 +455,8 @@ test('translateMessages retries on 429 rate limit error', async t => {
 	});
 
 	t.deepEqual(result, translated);
-	// Should have been called 3 times (2 failures + 1 success)
-	t.is(mockClient.getCallCount(), 3);
+	// Should have been called 2 times (1 failure + 1 success)
+	t.is(mockClient.getCallCount(), 2);
 });
 
 test('translateMessages retries on Resource exhausted error', async t => {
@@ -537,7 +538,7 @@ test('translateMessages throws immediately for non-rate-limit errors', async t =
 	t.is(callCount, 1);
 });
 
-test('translateMessages throws after max retries exceeded', async t => {
+test('translateMessages throws RateLimitError after max retries exceeded', async t => {
 	const messages = {hello: 'Hello'};
 
 	let callCount = 0;
@@ -550,22 +551,49 @@ test('translateMessages throws after max retries exceeded', async t => {
 		}),
 	};
 
-	await t.throwsAsync(
-		async () =>
-			translateMessages({
-				messages,
-				targetLanguage: 'de',
-				context: '',
-				apiKey: 'fake-api-key',
-				provider: 'gemini',
-				model: 'gemini-2.0-flash',
-				genAiClient: mockGenAiClient,
-			}),
-		{message: 'Error 429: Rate limited'},
-	);
+	const error = await t.throwsAsync(async () =>
+		translateMessages({
+			messages,
+			targetLanguage: 'de',
+			context: '',
+			apiKey: 'fake-api-key',
+			provider: 'gemini',
+			model: 'gemini-2.0-flash',
+			genAiClient: mockGenAiClient,
+		}));
 
-	// Should be called 4 times (initial + 3 retries)
-	t.is(callCount, 4);
+	// Should throw RateLimitError with specific message
+	t.true(error instanceof RateLimitError);
+	t.is(error?.message, 'Rate limit exceeded. Maximum retry attempts reached.');
+
+	// Should be called 3 times (3 total attempts)
+	t.is(callCount, 3);
+});
+
+test('translateMessages RateLimitError has correct name property', async t => {
+	const messages = {hello: 'Hello'};
+
+	const mockGenAiClient = {
+		getGenerativeModel: () => ({
+			async generateContent() {
+				throw new Error('Resource exhausted');
+			},
+		}),
+	};
+
+	const error = await t.throwsAsync(async () =>
+		translateMessages({
+			messages,
+			targetLanguage: 'de',
+			context: '',
+			apiKey: 'fake-api-key',
+			provider: 'gemini',
+			model: 'gemini-2.0-flash',
+			genAiClient: mockGenAiClient,
+		}));
+
+	// Verify the error name property for proper identification
+	t.is(error?.name, 'RateLimitError');
 });
 
 // ============================================================================

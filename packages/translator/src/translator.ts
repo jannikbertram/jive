@@ -1,34 +1,48 @@
 import {GoogleGenerativeAI} from '@google/generative-ai';
 
 /**
+ * Error thrown when rate limit retries are exhausted.
+ */
+export class RateLimitError extends Error {
+	constructor(message = 'Rate limit exceeded. Maximum retry attempts reached.') {
+		super(message);
+		this.name = 'RateLimitError';
+	}
+}
+
+/**
  * Executes an async function with exponential backoff retry logic.
  * Only retries on rate-limiting errors (429, Resource exhausted, quota).
  * @param function_ - The async function to execute
- * @param maxRetries - Maximum number of retry attempts (default: 3)
+ * @param maxAttempts - Maximum number of total attempts (default: 3)
  * @param baseDelayMs - Base delay in milliseconds for exponential backoff (default: 2000)
  * @returns The result of the function if successful
- * @throws The last error encountered if all retries fail or if a non-rate-limiting error occurs
+ * @throws RateLimitError if rate limit errors persist after all retry attempts
+ * @throws The original error immediately if it's a non-rate-limiting error
  */
 async function withRetry<T>(
 	function_: () => Promise<T>,
-	maxRetries = 3,
+	maxAttempts = 3,
 	baseDelayMs = 2000,
 ): Promise<T> {
-	let lastError: Error = new Error('Max retries exceeded');
-
-	for (let attempt = 0; attempt <= maxRetries; attempt++) {
+	for (let attempt = 0; attempt < maxAttempts; attempt++) {
 		try {
 			// eslint-disable-next-line no-await-in-loop
 			return await function_();
 		} catch (error) {
-			lastError = error as Error;
 			const isRateLimited = error instanceof Error
 				&& (error.message.includes('429')
 					|| error.message.includes('Resource exhausted')
 					|| error.message.includes('quota'));
 
-			if (!isRateLimited || attempt === maxRetries) {
+			// Non-rate-limit errors are thrown immediately
+			if (!isRateLimited) {
 				throw error;
+			}
+
+			// If this was the last attempt, throw a specific rate limit error
+			if (attempt === maxAttempts - 1) {
+				throw new RateLimitError();
 			}
 
 			// Exponential backoff: 2s, 4s, 8s
@@ -40,7 +54,8 @@ async function withRetry<T>(
 		}
 	}
 
-	throw lastError;
+	// This should never be reached due to the loop logic, but TypeScript needs it
+	throw new RateLimitError();
 }
 
 /**
