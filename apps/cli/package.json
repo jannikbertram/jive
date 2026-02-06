@@ -1,0 +1,59 @@
+{
+	"name": "@grim-t9n/cli",
+	"version": "0.0.1",
+	"description": "A CLI tool for translating localization files using your preferred LLM",
+	"license": "PolyForm-Noncommercial-1.0.0",
+	"keywords": [
+		"cli",
+		"translation",
+		"i18n",
+		"react-intl",
+		"gemini",
+		"ai"
+	],
+	"bin": {
+		"grim": "dist/cli.js"
+	},
+	"type": "module",
+	"engines": {
+		"node": ">=16"
+	},
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc --watch",
+		"test": "ava",
+		"lint": "xo"
+	},
+	"files": [
+		"dist"
+	],
+	"dependencies": {
+		"@google/generative-ai": "^0.24.1",
+		"ink": "^6.6.0",
+		"ink-select-input": "^6.2.0",
+		"ink-spinner": "^5.0.0",
+		"ink-text-input": "^6.0.0",
+		"pastel": "^4.0.0",
+		"react": "^19.2.4",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@ava/typescript": "^6.0.0",
+		"@types/react": "^19.2.10",
+		"ava": "^6.4.1",
+		"ink-testing-library": "^3.0.0",
+		"typescript": "^5.0.3"
+	},
+	"ava": {
+		"files": [
+			"test/**/*.test.ts"
+		],
+		"typescript": {
+			"rewritePaths": {
+				"source/": "dist/source/",
+				"test/": "dist/test/"
+			},
+			"compile": "tsc"
+		}
+	}
+}
