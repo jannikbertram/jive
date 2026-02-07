@@ -12,10 +12,12 @@ export {
 	verifyApiKey,
 	RateLimitError,
 	reviseMessages,
+	adviseLabels,
 	type TranslateOptions,
 	type Model,
 	type Provider,
 	type ReviseOptions,
+	type AdviseOptions,
 	type RevisionSuggestion,
 } from './translator.js';
 

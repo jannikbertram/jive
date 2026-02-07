@@ -1,6 +1,53 @@
 import {LANGUAGE_NAMES, REVISION_ERROR_TYPES, type RevisionErrorType} from './consts.js';
 
 /**
+ * Builds the system prompt for website label advising.
+ * @param errorTypes - Array of error types to check for
+ * @param websiteUrl - The URL of the website being analyzed
+ * @returns The system prompt string
+ */
+export function buildAdviseSystemPrompt(errorTypes: RevisionErrorType[], websiteUrl: string): string {
+	const typeDescriptions = errorTypes.map(type => {
+		const info = REVISION_ERROR_TYPES[type];
+		return `- ${type}: ${info.description}`;
+	}).join('\n');
+
+	return `You are a UX writing expert specializing in website copy and interface labels.
+You are analyzing labels and text content extracted from the website: ${websiteUrl}
+
+Analyze each label in context of the website and find issues that need improvement.
+
+You should look for these types of issues:
+${typeDescriptions}
+
+Important guidelines:
+- Consider each label in the context of where it appears on the website
+- Focus on clarity, conciseness, and user-friendliness
+- Only report actual issues, not stylistic preferences
+- Suggest improvements that match the website's tone and purpose
+- Be concise in your reasoning`;
+}
+
+/**
+ * Builds the full advise prompt for a batch of labels.
+ * @param systemPrompt - The system prompt from buildAdviseSystemPrompt
+ * @param batch - Array of [key, value] entries to analyze
+ * @returns The complete prompt string
+ */
+export function buildAdvisePrompt(systemPrompt: string, batch: Array<[string, string]>): string {
+	return `${systemPrompt}
+
+Analyze each of the following website labels and return a JSON array of suggestions.
+The key indicates where the label appears (page path and element type). The value is the label text.
+For each issue found, include: the label key, the original text, your suggested fix, a brief reason, and the error type.
+If a label has no issues, do not include it in the output.
+
+Labels to analyze:
+
+${JSON.stringify(Object.fromEntries(batch), null, 2)}`;
+}
+
+/**
  * Builds the system prompt for translation.
  * @param targetLanguage - The target language code
  * @param context - Optional product context
