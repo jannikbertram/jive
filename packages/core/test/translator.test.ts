@@ -59,7 +59,9 @@ function createMockModel(responseHandler: (prompt: string) => string): LanguageM
 				content: [{type: 'text', text}],
 				finishReason: {unified: 'stop', raw: undefined},
 				usage: {
-					inputTokens: {total: 10, noCache: undefined, cacheRead: undefined, cacheWrite: undefined},
+					inputTokens: {
+						total: 10, noCache: undefined, cacheRead: undefined, cacheWrite: undefined,
+					},
 					outputTokens: {total: 10, text: undefined, reasoning: undefined},
 				},
 				rawCall: {rawPrompt: '', rawSettings: {}},
@@ -99,7 +101,9 @@ function createRetryMockModel(
 				content: [{type: 'text', text: successResponse}],
 				finishReason: {unified: 'stop', raw: undefined},
 				usage: {
-					inputTokens: {total: 10, noCache: undefined, cacheRead: undefined, cacheWrite: undefined},
+					inputTokens: {
+						total: 10, noCache: undefined, cacheRead: undefined, cacheWrite: undefined,
+					},
 					outputTokens: {total: 10, text: undefined, reasoning: undefined},
 				},
 				rawCall: {rawPrompt: '', rawSettings: {}},
@@ -206,7 +210,9 @@ test('translateMessages processes large message sets in batches', async t => {
 				content: [{type: 'text', text: JSON.stringify(translated)}],
 				finishReason: {unified: 'stop', raw: undefined},
 				usage: {
-					inputTokens: {total: 10, noCache: undefined, cacheRead: undefined, cacheWrite: undefined},
+					inputTokens: {
+						total: 10, noCache: undefined, cacheRead: undefined, cacheWrite: undefined,
+					},
 					outputTokens: {total: 10, text: undefined, reasoning: undefined},
 				},
 				rawCall: {rawPrompt: '', rawSettings: {}},

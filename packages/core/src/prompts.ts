@@ -16,7 +16,9 @@ export function buildAdviseWebsitePrompt(errorTypes: RevisionErrorType[], websit
 
 Visit this website and analyze its visible text content: ${websiteUrl}
 
-Look at headings, buttons, links, navigation items, form labels, placeholders, image alt text, page title, and meta description.
+Only analyze text that is directly visible to the user on the page. This includes headings, paragraphs, buttons, links, navigation items, form labels, and placeholders.
+
+Do NOT analyze or report issues in hidden or non-rendered text such as image alt attributes, meta descriptions, page titles, aria-labels, HTML comments, or any other text that is not visually displayed on the page.
 
 Find issues in the following categories:
 ${typeDescriptions}

@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 					websiteUrl: url,
 					errorTypes: ['grammar', 'wording', 'phrasing'],
 					apiKey,
-					model: 'gemini-3-flash-preview',
+					model: 'gemini-2.5-flash',
 				})) {
 					controller.enqueue(encoder.encode(JSON.stringify(suggestion) + '\n'));
 				}

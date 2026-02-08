@@ -48,6 +48,21 @@ function apiPlugin(): Plugin {
 					res.end(await response.text());
 				}
 			});
+
+			server.middlewares.use('/api/sitemap', async (req, res) => {
+				if (req.method !== 'GET') {
+					res.writeHead(405).end();
+					return;
+				}
+
+				const query = new URL(req.url!, 'http://localhost').search;
+				const {GET} = await server.ssrLoadModule('../api/sitemap.ts') as typeof import('./api/sitemap.ts');
+				const request = new Request(`http://localhost/api/sitemap${query}`);
+				const response = await GET(request);
+
+				res.writeHead(response.status, {'Content-Type': 'application/json'});
+				res.end(await response.text());
+			});
 		},
 	};
 }

@@ -46,15 +46,29 @@ export function App() {
 	const [loading, setLoading] = useState(false);
 	const [suggestions, setSuggestions] = useState<RevisionSuggestion[] | undefined>();
 	const [error, setError] = useState<string | undefined>();
+	const [analyzedUrl, setAnalyzedUrl] = useState<string | undefined>();
+	const [sitemapUrls, setSitemapUrls] = useState<string[]>([]);
+	const [sitemapLoading, setSitemapLoading] = useState(false);
 	const abortRef = useRef<AbortController | null>(null);
 	const loadingLabel = useLoadingLabel(loading);
 
-	async function handleSubmit(event: FormEvent) {
-		event.preventDefault();
+	async function handleSubmit(event: FormEvent | null, overrideUrl?: string) {
+		event?.preventDefault();
+		const targetUrl = overrideUrl ?? url;
+		if (overrideUrl) setUrl(overrideUrl);
+
 		abortRef.current?.abort();
 		setLoading(true);
 		setError(undefined);
 		setSuggestions(undefined);
+		setSitemapUrls([]);
+
+		let normalizedUrl = targetUrl.trim();
+		if (!normalizedUrl.match(/^https?:\/\//)) {
+			normalizedUrl = `https://${normalizedUrl}`;
+		}
+
+		setAnalyzedUrl(normalizedUrl);
 
 		const controller = new AbortController();
 		abortRef.current = controller;
@@ -63,7 +77,7 @@ export function App() {
 			const response = await fetch('/api/advise', {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({url}),
+				body: JSON.stringify({url: targetUrl}),
 				signal: controller.signal,
 			});
 
@@ -106,6 +120,23 @@ export function App() {
 			setLoading(false);
 		}
 	}
+
+	useEffect(() => {
+		if (loading || !suggestions?.length || !analyzedUrl) return;
+
+		setSitemapLoading(true);
+		fetch(`/api/sitemap?url=${encodeURIComponent(analyzedUrl)}`)
+			.then(res => res.json() as Promise<{urls: string[]}>)
+			.then(data => {
+				setSitemapUrls(data.urls);
+			})
+			.catch(() => {
+				// Silent failure
+			})
+			.finally(() => {
+				setSitemapLoading(false);
+			});
+	}, [loading, suggestions, analyzedUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	return (
 		<div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans antialiased py-16 px-6">
@@ -187,6 +218,30 @@ export function App() {
 								</table>
 							</div>
 						)
+				)}
+				{!loading && sitemapLoading && (
+					<p className="text-zinc-500 text-sm mt-6 animate-pulse">Looking for other pages...</p>
+				)}
+
+				{sitemapUrls.length > 0 && (
+					<div className="mt-8 border-t border-zinc-800 pt-6">
+						<h2 className="text-sm font-medium text-zinc-400 mb-3">Other pages on this site</h2>
+						<ul className="space-y-1.5">
+							{sitemapUrls.map(subUrl => (
+								<li key={subUrl}>
+									<button
+										type="button"
+										className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors truncate max-w-full text-left"
+										onClick={() => {
+											handleSubmit(null, subUrl);
+										}}
+									>
+										{subUrl}
+									</button>
+								</li>
+							))}
+						</ul>
+					</div>
 				)}
 			</div>
 		</div>
