@@ -39,14 +39,8 @@ async function fetchSitemapUrls(sitemapUrl: string, excludeUrl: string, depth = 
 }
 
 function extractLocs(xml: string): string[] {
-	const urls: string[] = [];
 	const re = /<loc>\s*(.*?)\s*<\/loc>/g;
-	let match;
-	while ((match = re.exec(xml)) !== null) {
-		urls.push(match[1]);
-	}
-
-	return urls;
+	return Array.from(xml.matchAll(re), match => match[1]!);
 }
 
 function dedup(urls: string[], excludeUrl: string): string[] {
