@@ -13,16 +13,23 @@ export async function POST(request: Request) {
 		return Response.json({error: 'Invalid JSON body'}, {status: 400});
 	}
 
-	if (!body.url || typeof body.url !== 'string') {
-		return Response.json({error: 'Missing required field: url'}, {status: 400});
+	let url = body.url.trim();
+	if (!url.match(/^https?:\/\//)) {
+		url = `https://${url}`;
+	}
+
+	try {
+		new URL(url);
+	} catch {
+		return Response.json({error: 'Invalid URL provided'}, {status: 400});
 	}
 
 	try {
 		const suggestions = await adviseWebsite({
-			websiteUrl: body.url,
+			websiteUrl: url,
 			errorTypes: ['grammar', 'wording', 'phrasing'],
 			apiKey,
-			model: 'gemini-2.5-flash',
+			model: 'gemini-3-flash-preview',
 		});
 
 		return Response.json({suggestions});

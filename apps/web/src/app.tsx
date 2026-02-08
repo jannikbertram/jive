@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import './app.css';
 
-import type {SubmitEvent} from 'react';
+import type {FormEvent} from 'react';
 
 type RevisionSuggestion = {
 	key: string;
@@ -17,17 +17,19 @@ export function App() {
 	const [suggestions, setSuggestions] = useState<RevisionSuggestion[] | undefined>();
 	const [error, setError] = useState<string | undefined>();
 
-	async function handleSubmit(event: SubmitEvent) {
+	async function handleSubmit(event: FormEvent) {
 		event.preventDefault();
 		setLoading(true);
 		setError(undefined);
 		setSuggestions(undefined);
 
+		let taskUrl = url;
+
 		try {
 			const response = await fetch('/api/advise', {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({url}),
+				body: JSON.stringify({url: taskUrl}),
 			});
 
 			const data = await response.json() as {suggestions?: RevisionSuggestion[]; error?: string};
@@ -46,58 +48,83 @@ export function App() {
 	}
 
 	return (
-		<div className="container">
-			<h1>Jive</h1>
-			<p className="subtitle">Analyze a website for grammar, wording, and phrasing issues.</p>
+		<div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans antialiased py-16 px-6">
+			<div className="max-w-4xl mx-auto">
+				<h1 className="text-4xl font-bold tracking-tight mb-2">Jive</h1>
+				<p className="text-zinc-400 mb-8">Analyze a website for grammar, wording, and phrasing issues.</p>
 
-			<form onSubmit={handleSubmit}>
-				<div className="input-row">
-					<input
-						type="url"
-						value={url}
-						onChange={e => {
-							setUrl(e.target.value);
-						}}
-						placeholder="https://example.com"
-						required
-						disabled={loading}
-					/>
-					<button type="submit" disabled={loading || !url}>
-						{loading ? 'Analyzing…' : 'Analyze'}
-					</button>
-				</div>
-			</form>
+				<form onSubmit={handleSubmit} className="mb-8">
+					<div className="flex gap-2 mb-6">
+						<input
+							type="text"
+							inputMode="url"
+							className="flex-1 px-3.5 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-zinc-50 placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors disabled:opacity-50"
+							value={url}
+							onChange={e => {
+								setUrl(e.target.value);
+							}}
+							placeholder="example.com"
+							pattern="^(https?:\/\/)?([\w\d\-_]+\.)+[\w\d\-_]+(\/.*)?$"
+							required
+							disabled={loading}
+						/>
+						<button
+							type="submit"
+							className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-950 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+							disabled={loading || !url}
+						>
+							{loading ? 'Analyzing…' : 'Analyze'}
+						</button>
+					</div>
+				</form>
 
-			{error && <div className="error">{error}</div>}
+				{error && (
+					<div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 mb-6 text-sm">
+						{error}
+					</div>
+				)}
 
-			{suggestions !== undefined && (
-				suggestions.length === 0
-					? <p className="no-issues">No issues found.</p>
-					: (
-						<table>
-							<thead>
-								<tr>
-									<th>Key</th>
-									<th>Type</th>
-									<th>Original</th>
-									<th>Suggested</th>
-									<th>Reason</th>
-								</tr>
-							</thead>
-							<tbody>
-								{suggestions.map((s, i) => (
-									<tr key={i}>
-										<td><code>{s.key}</code></td>
-										<td><span className={`badge badge-${s.type}`}>{s.type}</span></td>
-										<td>{s.original}</td>
-										<td>{s.suggested}</td>
-										<td>{s.reason}</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					)
-			)}
+				{suggestions != null && (
+					suggestions.length === 0
+						? <p className="text-zinc-400 text-center py-12">No issues found.</p>
+						: (
+							<div className="overflow-x-auto">
+								<table className="w-full text-sm text-left">
+									<thead>
+										<tr className="border-b border-zinc-800">
+											<th className="px-3 py-3 text-zinc-400 font-medium text-xs uppercase tracking-wider">Key</th>
+											<th className="px-3 py-3 text-zinc-400 font-medium text-xs uppercase tracking-wider">Type</th>
+											<th className="px-3 py-3 text-zinc-400 font-medium text-xs uppercase tracking-wider">Original</th>
+											<th className="px-3 py-3 text-zinc-400 font-medium text-xs uppercase tracking-wider">Suggested</th>
+											<th className="px-3 py-3 text-zinc-400 font-medium text-xs uppercase tracking-wider">Reason</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-zinc-800">
+										{suggestions.map((s, i) => (
+											<tr key={i} className="group">
+												<td className="px-3 py-3 align-top">
+													<code className="font-mono text-xs bg-zinc-900 px-1.5 py-0.5 rounded text-zinc-300 border border-zinc-800">{s.key}</code>
+												</td>
+												<td className="px-3 py-3 align-top">
+													<span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium capitalize
+														${s.type === 'grammar' ? 'bg-red-500/10 text-red-500' : ''}
+														${s.type === 'wording' ? 'bg-amber-500/10 text-amber-500' : ''}
+														${s.type === 'phrasing' ? 'bg-indigo-500/10 text-indigo-500' : ''}
+													`}>
+														{s.type}
+													</span>
+												</td>
+												<td className="px-3 py-3 align-top text-zinc-300">{s.original}</td>
+												<td className="px-3 py-3 align-top text-zinc-300">{s.suggested}</td>
+												<td className="px-3 py-3 align-top text-zinc-400">{s.reason}</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						)
+				)}
+			</div>
 		</div>
 	);
 }
