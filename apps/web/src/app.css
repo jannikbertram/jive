@@ -1,0 +1,169 @@
+:root {
+	--bg: #0a0a0b;
+	--surface: #141416;
+	--border: #27272a;
+	--text: #fafafa;
+	--text-muted: #a1a1aa;
+	--accent: #6366f1;
+	--accent-hover: #818cf8;
+	--error: #ef4444;
+	--badge-grammar: #ef4444;
+	--badge-wording: #f59e0b;
+	--badge-phrasing: #6366f1;
+	--radius: 8px;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	font-family: system-ui, -apple-system, sans-serif;
+	background: var(--bg);
+	color: var(--text);
+	line-height: 1.6;
+	-webkit-font-smoothing: antialiased;
+}
+
+.container {
+	max-width: 960px;
+	margin: 0 auto;
+	padding: 64px 24px;
+}
+
+h1 {
+	font-size: 2rem;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+
+.subtitle {
+	color: var(--text-muted);
+	margin-bottom: 32px;
+}
+
+.input-row {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 24px;
+}
+
+input[type="url"] {
+	flex: 1;
+	padding: 10px 14px;
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	color: var(--text);
+	font-size: 0.95rem;
+	outline: none;
+	transition: border-color 0.15s;
+}
+
+input[type="url"]:focus {
+	border-color: var(--accent);
+}
+
+input[type="url"]::placeholder {
+	color: var(--text-muted);
+}
+
+button {
+	padding: 10px 20px;
+	background: var(--accent);
+	color: #fff;
+	border: none;
+	border-radius: var(--radius);
+	font-size: 0.95rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background 0.15s;
+	white-space: nowrap;
+}
+
+button:hover:not(:disabled) {
+	background: var(--accent-hover);
+}
+
+button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.error {
+	padding: 12px 16px;
+	background: color-mix(in srgb, var(--error) 10%, transparent);
+	border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
+	border-radius: var(--radius);
+	color: var(--error);
+	margin-bottom: 24px;
+}
+
+.no-issues {
+	color: var(--text-muted);
+	text-align: center;
+	padding: 48px 0;
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.9rem;
+}
+
+thead th {
+	text-align: left;
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--border);
+	color: var(--text-muted);
+	font-weight: 500;
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+tbody td {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--border);
+	vertical-align: top;
+}
+
+tbody tr:last-child td {
+	border-bottom: none;
+}
+
+code {
+	font-family: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+	font-size: 0.85em;
+	background: var(--surface);
+	padding: 2px 6px;
+	border-radius: 4px;
+}
+
+.badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 0.75rem;
+	font-weight: 500;
+	text-transform: capitalize;
+}
+
+.badge-grammar {
+	background: color-mix(in srgb, var(--badge-grammar) 15%, transparent);
+	color: var(--badge-grammar);
+}
+
+.badge-wording {
+	background: color-mix(in srgb, var(--badge-wording) 15%, transparent);
+	color: var(--badge-wording);
+}
+
+.badge-phrasing {
+	background: color-mix(in srgb, var(--badge-phrasing) 15%, transparent);
+	color: var(--badge-phrasing);
+}
