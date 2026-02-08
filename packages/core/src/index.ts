@@ -12,7 +12,7 @@ export {
 	verifyApiKey,
 	RateLimitError,
 	reviseMessages,
-	adviseLabels,
+	adviseWebsite,
 	type TranslateOptions,
 	type Model,
 	type Provider,

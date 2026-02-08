@@ -3,10 +3,10 @@ import {createGoogleGenerativeAI} from '@ai-sdk/google';
 import {createOpenAI} from '@ai-sdk/openai';
 import {createAnthropic} from '@ai-sdk/anthropic';
 import {z} from 'zod';
-import {TRANSLATION_BATCH_SIZE, REVISION_BATCH_SIZE, ADVISE_BATCH_SIZE, type RevisionErrorType} from './consts.js';
+import {TRANSLATION_BATCH_SIZE, REVISION_BATCH_SIZE, type RevisionErrorType} from './consts.js';
 import {
 	buildSystemPrompt, buildTranslationPrompt, buildRevisionSystemPrompt, buildRevisionPrompt,
-	buildAdviseSystemPrompt, buildAdvisePrompt,
+	buildAdviseWebsitePrompt,
 } from './prompts.js';
 
 /**
@@ -393,10 +393,9 @@ export async function reviseMessages({
  */
 export type AdviseOptions = {
 	/**
-	 * Key-value pairs of label identifiers to their text content.
-	 * Keys typically encode the page path and element type (e.g., "/about#heading-0").
+	 * The URL of the website to analyze.
 	 */
-	labels: Record<string, string>;
+	websiteUrl: string;
 
 	/**
 	 * Error types to check for.
@@ -404,96 +403,57 @@ export type AdviseOptions = {
 	errorTypes: RevisionErrorType[];
 
 	/**
-	 * The URL of the website being analyzed.
-	 */
-	websiteUrl: string;
-
-	/**
-	 * API key for authentication with the provider.
+	 * API key for authentication with Google.
 	 */
 	apiKey: string;
 
 	/**
-	 * The LLM provider to use.
-	 */
-	provider: Provider;
-
-	/**
-	 * The specific model to use.
+	 * The specific Gemini model to use.
 	 */
 	model: string;
-
-	/**
-	 * Optional callback to report analysis progress.
-	 */
-	onProgress?: (current: number, total: number) => void;
-
-	/**
-	 * Optional custom AI model for testing.
-	 * @internal
-	 */
-	aiModel?: LanguageModel;
 };
 
 /**
- * Analyzes website labels for grammar, wording, and phrasing issues.
+ * Analyzes a website for grammar, wording, and phrasing issues using Gemini's URL context tool.
  *
- * Labels are processed in batches for efficiency. Uses structured output
- * to guarantee valid JSON responses from the AI model.
+ * The model visits the website directly and analyzes its content, eliminating the need
+ * for manual crawling and DOM extraction.
  *
  * @param options - Configuration options for the analysis
  * @returns A promise resolving to an array of revision suggestions
  */
-export async function adviseLabels({
-	labels,
-	errorTypes,
+export async function adviseWebsite({
 	websiteUrl,
+	errorTypes,
 	apiKey,
-	provider,
 	model: modelName,
-	onProgress,
-	aiModel,
 }: AdviseOptions): Promise<RevisionSuggestion[]> {
-	const model = aiModel ?? createModel(provider, modelName, apiKey);
+	const google = createGoogleGenerativeAI({apiKey});
+	const model = google(modelName);
 
-	const entries = Object.entries(labels);
-	const total = entries.length;
-	const suggestions: RevisionSuggestion[] = [];
+	const prompt = buildAdviseWebsitePrompt(errorTypes, websiteUrl);
 
-	const systemPrompt = buildAdviseSystemPrompt(errorTypes, websiteUrl);
-
-	const suggestionSchema = z.object({
-		key: z.string().describe('The label key'),
-		original: z.string().describe('The original text'),
-		suggested: z.string().describe('The suggested replacement'),
-		reason: z.string().describe('Brief explanation for the suggestion'),
-		type: z.enum(['grammar', 'wording', 'phrasing']).describe('The type of issue'),
+	const result = await generateText({
+		model,
+		prompt,
+		tools: {
+			url_context: google.tools.urlContext({}), // eslint-disable-line @typescript-eslint/naming-convention
+		},
 	});
 
-	const adviseSuggestionsSchema = z.array(suggestionSchema);
+	const suggestionSchema = z.array(z.object({
+		key: z.string(),
+		original: z.string(),
+		suggested: z.string(),
+		reason: z.string(),
+		type: z.enum(['grammar', 'wording', 'phrasing']),
+	}));
 
-	let processed = 0;
-	for (let i = 0; i < entries.length; i += ADVISE_BATCH_SIZE) {
-		const batch = entries.slice(i, i + ADVISE_BATCH_SIZE);
-
-		const prompt = buildAdvisePrompt(systemPrompt, batch);
-
-		// eslint-disable-next-line no-await-in-loop
-		const result = await generateText({
-			model,
-			prompt,
-			output: Output.object({schema: adviseSuggestionsSchema}),
-		});
-
-		if (result.output && Array.isArray(result.output)) {
-			for (const suggestion of result.output) {
-				suggestions.push(suggestion as RevisionSuggestion);
-			}
-		}
-
-		processed += batch.length;
-		onProgress?.(processed, total);
+	const jsonMatch = result.text.match(/\[[\s\S]*\]/);
+	if (!jsonMatch) {
+		return [];
 	}
 
-	return suggestions;
+	const parsed = suggestionSchema.safeParse(JSON.parse(jsonMatch[0]));
+	return parsed.success ? parsed.data : [];
 }

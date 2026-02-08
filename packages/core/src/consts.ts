@@ -52,7 +52,3 @@ export type RevisionErrorType = keyof typeof REVISION_ERROR_TYPES;
  */
 export const REVISION_BATCH_SIZE = 100;
 
-/**
- * The number of labels to analyze in each advise batch.
- */
-export const ADVISE_BATCH_SIZE = 50;

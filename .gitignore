@@ -3,3 +3,4 @@ artifacts/
 node_modules/
 dist/
 storage/
+website_improvements.md

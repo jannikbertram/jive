@@ -1,50 +1,41 @@
 import {LANGUAGE_NAMES, REVISION_ERROR_TYPES, type RevisionErrorType} from './consts.js';
 
 /**
- * Builds the system prompt for website label advising.
+ * Builds the prompt for website advising using URL context.
  * @param errorTypes - Array of error types to check for
- * @param websiteUrl - The URL of the website being analyzed
- * @returns The system prompt string
+ * @param websiteUrl - The URL of the website to analyze
+ * @returns The prompt string
  */
-export function buildAdviseSystemPrompt(errorTypes: RevisionErrorType[], websiteUrl: string): string {
+export function buildAdviseWebsitePrompt(errorTypes: RevisionErrorType[], websiteUrl: string): string {
 	const typeDescriptions = errorTypes.map(type => {
 		const info = REVISION_ERROR_TYPES[type];
 		return `- ${type}: ${info.description}`;
 	}).join('\n');
 
 	return `You are a UX writing expert specializing in website copy and interface labels.
-You are analyzing labels and text content extracted from the website: ${websiteUrl}
 
-Analyze each label in context of the website and find issues that need improvement.
+Visit this website and analyze its visible text content: ${websiteUrl}
 
-You should look for these types of issues:
+Look at headings, buttons, links, navigation items, form labels, placeholders, image alt text, page title, and meta description.
+
+Find issues in the following categories:
 ${typeDescriptions}
 
 Important guidelines:
-- Consider each label in the context of where it appears on the website
 - Focus on clarity, conciseness, and user-friendliness
 - Only report actual issues, not stylistic preferences
 - Suggest improvements that match the website's tone and purpose
-- Be concise in your reasoning`;
-}
+- Be concise in your reasoning
+- Use a descriptive key for each issue (e.g., "heading-1", "nav-about", "button-submit")
 
-/**
- * Builds the full advise prompt for a batch of labels.
- * @param systemPrompt - The system prompt from buildAdviseSystemPrompt
- * @param batch - Array of [key, value] entries to analyze
- * @returns The complete prompt string
- */
-export function buildAdvisePrompt(systemPrompt: string, batch: Array<[string, string]>): string {
-	return `${systemPrompt}
+Respond with ONLY a JSON array of objects, each with these fields:
+- "key": descriptive label key
+- "original": the original text
+- "suggested": your suggested replacement
+- "reason": brief explanation
+- "type": one of "grammar", "wording", or "phrasing"
 
-Analyze each of the following website labels and return a JSON array of suggestions.
-The key indicates where the label appears (page path and element type). The value is the label text.
-For each issue found, include: the label key, the original text, your suggested fix, a brief reason, and the error type.
-If a label has no issues, do not include it in the output.
-
-Labels to analyze:
-
-${JSON.stringify(Object.fromEntries(batch), null, 2)}`;
+If there are no issues, respond with an empty array: []`;
 }
 
 /**
