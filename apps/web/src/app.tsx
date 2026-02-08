@@ -1,5 +1,7 @@
-import {type FormEvent, useState} from 'react';
+import {useState} from 'react';
 import './app.css';
+
+import type {SubmitEvent} from 'react';
 
 type RevisionSuggestion = {
 	key: string;
@@ -15,7 +17,7 @@ export function App() {
 	const [suggestions, setSuggestions] = useState<RevisionSuggestion[] | undefined>();
 	const [error, setError] = useState<string | undefined>();
 
-	async function handleSubmit(event: FormEvent) {
+	async function handleSubmit(event: SubmitEvent) {
 		event.preventDefault();
 		setLoading(true);
 		setError(undefined);
