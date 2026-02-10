@@ -1,6 +1,6 @@
-# Jive Web
+# Jive Web — website grammar and copy checker
 
-A web interface for analyzing websites for grammar, wording, and phrasing issues. Enter a URL, get suggestions streamed back in real time. After analysis, Jive discovers other pages via the site's sitemap so you can analyze them with one click.
+Analyze any website for grammar, wording, and phrasing issues. Enter a URL, get suggestions streamed back in real time. After analysis, Jive discovers other pages via the site's sitemap so you can analyze them with one click.
 
 **[Live app](https://jive-eosin.vercel.app/)**
 

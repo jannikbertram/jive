@@ -1,6 +1,6 @@
-# Jive CLI
+# Jive CLI — translate and proofread i18n files from your terminal
 
-An interactive command-line tool for translating and proofreading localization files. Walks you through provider selection, API key entry, and model choice, then processes your files and lets you review suggestions one by one.
+Interactive command-line tool for translating and proofreading JSON localization files. Walks you through provider selection, API key entry, and model choice, then processes your files and lets you review suggestions one by one.
 
 ## Install
 

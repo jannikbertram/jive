@@ -1,4 +1,4 @@
-# Jive
+# Jive — i18n translation and proofreading for JSON localization files
 
 Translate, revise, and proofread your localization files and websites using LLMs. Jive works with flat JSON message files (like those used by react-intl) and can also analyze live websites for grammar, wording, and phrasing issues.
 

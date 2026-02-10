@@ -1,6 +1,6 @@
-# @jive/core
+# @jive/core — LLM translation and revision engine for i18n
 
-The shared engine behind Jive. Handles translation, revision, and website analysis by talking to LLM APIs and returning structured results.
+The shared engine behind Jive. Handles translation, revision, and website analysis by talking to LLM APIs (Gemini, OpenAI, Anthropic) and returning structured results.
 
 ## API
 
