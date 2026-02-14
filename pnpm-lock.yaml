@@ -93,6 +93,9 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
+    dependenciesMeta:
+      '@jive/core':
+        injected: true
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.1.18
