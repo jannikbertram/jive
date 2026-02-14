@@ -9,8 +9,8 @@
 		"node": ">=24"
 	},
 	"scripts": {
-		"build": "pnpm -r build",
-		"dev": "pnpm -r --parallel dev",
+		"build": "turbo build",
+		"dev": "turbo dev",
 		"test": "pnpm -r test",
 		"lint": "pnpm -r lint",
 		"clean": "pnpm -r exec rm -rf dist node_modules"
@@ -25,6 +25,7 @@
 		"prettier": "^2.8.7",
 		"ts-node": "^10.9.1",
 		"tsx": "^4.21.0",
+		"turbo": "^2.8.8",
 		"typescript": "^5.0.3",
 		"xo": "^1.2.3"
 	},
@@ -33,6 +34,7 @@
 		"prettier": true
 	},
 	"prettier": "@vdemedes/prettier-config",
+	"packageManager": "pnpm@10.28.2",
 	"volta": {
 		"node": "25.6.0"
 	}
